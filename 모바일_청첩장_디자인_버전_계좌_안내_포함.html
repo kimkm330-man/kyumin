@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>모바일 청첩장 v2</title>
+  <meta name="theme-color" content="#f9f6f1" />
+  <style>
+    :root{
+      --accent:#ff5a8a; /* 포인트 컬러 */
+      --bg:#0b0b0c; /* 앱 UI는 다크, 배경 이미지는 밝게 */
+      --text:#f7f7f8;
+      --muted:#b6b6bf;
+      --card: rgba(255,255,255,.24);
+      --blur: 14px;
+      --radius: 18px;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Apple SD Gothic Neo, sans-serif; -webkit-font-smoothing:antialiased; line-height:1.4; overflow:hidden;}
+
+    /* 고정 배경 (밝은 이미지) */
+    .bg-wrap{position:fixed; inset:0; z-index:-2; overflow:hidden}
+    .bg-wrap img{width:120%; height:120%; object-fit:cover; filter:saturate(1.05) brightness(.95) contrast(1.02); transform:translate(-10%,-10%);}    
+    .bg-overlay{position:fixed; inset:0; z-index:-1; background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.2));}
+
+    /* 상단 헤더 */
+    header{position:fixed; top:0; left:0; right:0; height:62px; display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 16px; z-index:3; backdrop-filter: blur(var(--blur)); background:linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.35)); color:#2b2b2b; border-bottom:1px solid rgba(0,0,0,.06);}    
+    header .title{font-weight:800; letter-spacing:.3px}
+    header .sub{font-size:12px; color:#6b6b6b}
+
+    /* 컨텐츠 뷰 */
+    main{position:fixed; top:62px; bottom:84px; left:0; right:0; overflow:auto; scroll-behavior:smooth; padding:16px;}
+    section.view{display:none; animation:fade .28s ease}
+    section.view.active{display:block}
+    @keyframes fade{from{opacity:.0; transform:translateY(4px)} to{opacity:1; transform:none}}
+
+    /* 카드 */
+    .card{background:var(--card); border:1px solid rgba(0,0,0,.06); border-radius:var(--radius); padding:16px; backdrop-filter: blur(var(--blur)); box-shadow:0 6px 30px rgba(0,0,0,.08); color:#2b2b2b}
+    .chip{display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(0,0,0,.12); color:#2b2b2b; background:rgba(255,255,255,.7); padding:6px 10px; border-radius:999px; font-size:12px}
+
+    /* 홈 */
+    .hero{display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; padding:8px 0 4px}
+    .hero .names{font-size:28px; font-weight:800; letter-spacing:.4px; color:#1f1f1f}
+    .hero .amp{color:var(--accent)}
+    .hero .date{color:#4f4f56; font-size:14px}
+
+    .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px}
+    .info-item{padding:14px; border-radius:14px; background:rgba(255,255,255,.75); border:1px solid rgba(0,0,0,.06); color:#2b2b2b}
+    .info-item .k{font-size:12px; color:#6b6b6b}
+    .info-item .v{font-weight:800; margin-top:6px}
+
+    /* 스토리 */
+    .timeline{display:grid; gap:12px}
+    .tl-item{display:grid; gap:6px; padding:14px; border-radius:14px; background:rgba(255,255,255,.75); border:1px solid rgba(0,0,0,.06); color:#2b2b2b}
+    .tl-item .t{font-size:12px; color:#6b6b6b}
+
+    /* 갤러리 (인스타 피드) */
+    .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:4px}
+    .grid3 img{width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:8px; cursor:pointer}
+
+    /* 라이트박스 */
+    .lightbox{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.85); z-index:20}
+    .lightbox.active{display:grid}
+    .lightbox img{max-width:92vw; max-height:78vh; border-radius:12px}
+
+    /* 계좌/연락 */
+    .bank{display:grid; gap:12px}
+    .bank-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px; border-radius:12px; background:rgba(255,255,255,.75); border:1px solid rgba(0,0,0,.06); color:#2b2b2b}
+    .bank-row .meta{display:grid}
+    .bank-row .meta .k{font-size:12px; color:#6b6b6b}
+    .bank-row .meta .v{font-weight:800}
+    .btn{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid rgba(0,0,0,.12); background:#fff; color:#222; font-weight:700; text-decoration:none; cursor:pointer}
+    .btn:active{transform:translateY(1px)}
+
+    /* 지도 */
+    .map-card{height:300px; border-radius:16px; overflow:hidden; background:#fff; border:1px solid rgba(0,0,0,.06);}
+    #naverMap{width:100%; height:100%}
+
+    /* 하단 탭바 */
+    nav.tabbar{position:fixed; left:0; right:0; bottom:0; height:84px; padding:8px 10px calc(8px + var(--safe-bottom)); z-index:5; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; align-items:end; backdrop-filter: blur(var(--blur)); background:linear-gradient(0deg, rgba(255,255,255,.75), rgba(255,255,255,.45)); border-top:1px solid rgba(0,0,0,.06);}
+    .tab{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 2px; border-radius:12px; color:#5a5a60; text-decoration:none; user-select:none}
+    .tab svg{width:26px; height:26px}
+    .tab.active{color:#111}
+    .tab.active .dot{width:6px; height:6px; background:var(--accent); border-radius:999px}
+    .label{font-size:11px}
+
+    /* 토스트 */
+    .toast{position:fixed; left:50%; bottom:calc(96px + var(--safe-bottom)); transform:translateX(-50%); z-index:50; background:rgba(20,20,22,.9); color:#fff; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.12); display:none}
+    .toast.show{display:block; animation:pop .32s ease}
+    @keyframes pop{from{opacity:0; transform:translate(-50%, 8px)} to{opacity:1; transform:translate(-50%, 0)}}
+
+    a.inline{color:#111; text-underline-offset:3px}
+  </style>
+  <!-- 네이버 지도 SDK: 실제 사용 시 ncpClientId 교체 필요 -->
+  <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=YOUR_NAVER_MAPS_CLIENT_ID"></script>
+</head>
+<body>
+  <!-- 밝은 느낌의 고정 배경 이미지 (원하면 교체) -->
+  <div class="bg-wrap" aria-hidden="true">
+    <img id="bgGif" src="https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1600&auto=format&fit=crop" alt="밝은 배경 이미지" />
+  </div>
+  <div class="bg-overlay" aria-hidden="true"></div>
+
+  <header>
+    <div class="title">우리 결혼합니다</div>
+    <div class="sub">Mobile Invite · v2</div>
+  </header>
+
+  <main id="router">
+    <!-- 홈 -->
+    <section class="view active" data-route="home">
+      <div class="card hero">
+        <span class="chip">초대합니다</span>
+        <div class="names">김규민 <span class="amp">&</span> 김의인</div>
+        <div class="date">2025. 10. 18 (토) · 오후 1:00</div>
+        <div class="date">더화이트베일 5층 라포네홀</div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="k">신랑측 연락</div>
+          <div class="v">010-1234-5678</div>
+        </div>
+        <div class="info-item">
+          <div class="k">신부측 연락</div>
+          <div class="v">010-9876-5432</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        혼례에 함께해 주시면 큰 기쁨이겠습니다. 바쁘시더라도 따뜻한 축복과 격려 부탁드립니다.
+      </div>
+    </section>
+
+    <!-- 스토리 -->
+    <section class="view" data-route="story">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="t">처음 만난 날</div>
+          <div class="b">서점에서 우연히 마주친 인연이 시작이 되었어요.</div>
+        </div>
+        <div class="tl-item">
+          <div class="t">우리의 약속</div>
+          <div class="b">작은 것에 웃고, 어려움에는 손을 잡아주기로 했어요.</div>
+        </div>
+        <div class="tl-item">
+          <div class="t">그리고 지금</div>
+          <div class="b">가을 햇살 아래, 함께 걸음을 시작합니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 갤러리 (3x3 피드) -->
+    <section class="view" data-route="gallery">
+      <div class="grid3" id="feed">
+        <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=600&auto=format&fit=crop" alt="사진1" />
+        <img src="https://images.unsplash.com/photo-1522673607200-9cd4b0f7e2bd?q=80&w=600&auto=format&fit=crop" alt="사진2" />
+        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진3" />
+        <img src="https://images.unsplash.com/photo-1520781359717-3eb98461c9b7?q=80&w=600&auto=format&fit=crop" alt="사진4" />
+        <img src="https://images.unsplash.com/photo-1460364157752-926555421a7e?q=80&w=600&auto=format&fit=crop" alt="사진5" />
+        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진6" />
+        <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=600&auto=format&fit=crop" alt="사진7" />
+        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진8" />
+        <img src="https://images.unsplash.com/photo-1520781359717-3eb98461c9b7?q=80&w=600&auto=format&fit=crop" alt="사진9" />
+      </div>
+    </section>
+
+    <!-- 계좌 & 연락 -->
+    <section class="view" data-route="info">
+      <div class="bank">
+        <div class="bank-row">
+          <div class="meta">
+            <span class="k">신랑측 축의</span>
+            <span class="v" id="acc-g">국민 123456-78-901234 (김규민)</span>
+          </div>
+          <button class="btn" data-copy="#acc-g">복사</button>
+        </div>
+        <div class="bank-row">
+          <div class="meta">
+            <span class="k">신부측 축의</span>
+            <span class="v" id="acc-b">신한 987-654-321000 (김의인)</span>
+          </div>
+          <button class="btn" data-copy="#acc-b">복사</button>
+        </div>
+        <div class="bank-row">
+          <div class="meta">
+            <span class="k">연락(신랑)</span>
+            <span class="v" id="call-g">010-1234-5678</span>
+          </div>
+          <a class="btn" href="tel:01012345678">전화</a>
+        </div>
+        <div class="bank-row">
+          <div class="meta">
+            <span class="k">연락(신부)</span>
+            <span class="v" id="call-b">010-9876-5432</span>
+          </div>
+          <a class="btn" href="tel:01098765432">전화</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 오시는 길 (네이버 지도 연동) -->
+    <section class="view" data-route="map">
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-weight:800; margin-bottom:6px">더화이트베일 5층 라포네홀</div>
+        <div style="color:#6b6b6b; font-size:14px">서울 강남구 테헤란로 000</div>
+      </div>
+      <div class="map-card"><div id="naverMap" role="application" aria-label="네이버 지도"></div></div>
+      <div style="display:flex; gap:8px; margin-top:12px">
+        <a class="btn" id="openNaver" target="_blank" rel="noopener">네이버 지도 열기</a>
+        <a class="btn" id="openKakao" target="_blank" rel="noopener">카카오맵 열기</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- 라이트박스 -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="사진 크게 보기">
+    <img alt="미리보기" />
+  </div>
+
+  <!-- 하단 탭바: 홈/스토리/갤러리/정보/지도 -->
+  <nav class="tabbar" aria-label="하단 탭바">
+    <a class="tab active" data-link="home" href="#home" aria-label="홈">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>
+      <span class="label">홈</span>
+      <div class="dot"></div>
+    </a>
+    <a class="tab" data-link="story" href="#story" aria-label="스토리">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 8h10M7 12h6"/></svg>
+      <span class="label">스토리</span>
+      <div class="dot" hidden></div>
+    </a>
+    <a class="tab" data-link="gallery" href="#gallery" aria-label="갤러리">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>
+      <span class="label">갤러리</span>
+      <div class="dot" hidden></div>
+    </a>
+    <a class="tab" data-link="info" href="#info" aria-label="계좌/연락">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9h19"/></svg>
+      <span class="label">계좌·연락</span>
+      <div class="dot" hidden></div>
+    </a>
+    <a class="tab" data-link="map" href="#map" aria-label="오시는 길">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.8"/></svg>
+      <span class="label">오시는 길</span>
+      <div class="dot" hidden></div>
+    </a>
+  </nav>
+
+  <div class="toast" id="toast">복사되었습니다</div>
+
+  <script>
+    // 탭 라우터
+    const tabs = document.querySelectorAll('.tabbar .tab');
+    const routeOrder = ['home','story','gallery','info','map'];
+    const views = document.querySelectorAll('section.view');
+    const router = document.getElementById('router');
+    function activate(route){
+      tabs.forEach(t=>{
+        const on = t.dataset.link === route;
+        t.classList.toggle('active', on);
+        const dot = t.querySelector('.dot');
+        if(dot) dot.toggleAttribute('hidden', !on);
+      });
+      views.forEach(v=>v.classList.toggle('active', v.dataset.route===route));
+      router.scrollTop = 0;
+      if(route==='map') initMapOnce();
+    }
+    tabs.forEach(t=>t.addEventListener('click', e=>{ e.preventDefault(); activate(t.dataset.link); history.replaceState({}, '', '#'+t.dataset.link);}));
+    const initRoute = location.hash?.replace('#','') || 'home';
+    activate(initRoute);
+
+    // 스와이프 내비게이션 (좌/우)
+    let touchStartX=0, touchStartY=0, swiping=false;
+    router.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; swiping=true; }, {passive:true});
+    router.addEventListener('touchend', (e)=>{
+      if(!swiping) return; swiping=false;
+      const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; const dy=t.clientY-touchStartY;
+      if(Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return; // 수평 스와이프만
+      // 현재 라우트 인덱스
+      const hash = location.hash?.replace('#','') || 'home';
+      let idx = routeOrder.indexOf(hash); if(idx<0) idx=0;
+      if(dx < 0 && idx < routeOrder.length-1) idx++; // 왼쪽으로 밀면 다음
+      else if(dx > 0 && idx > 0) idx--;            // 오른쪽으로 밀면 이전
+      const next = routeOrder[idx];
+      activate(next); history.replaceState({}, '', '#'+next);
+    }, {passive:true});
+
+    // 복사 버튼 + 토스트
+    const toast = document.getElementById('toast');
+    document.querySelectorAll('[data-copy]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const sel = btn.getAttribute('data-copy');
+        const text = document.querySelector(sel)?.innerText?.trim();
+        if(text){
+          try{ await navigator.clipboard.writeText(text); toast.textContent='복사되었습니다'; }
+          catch(err){ toast.textContent='복사 실패. 길게 눌러 복사하세요'; }
+          toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1400);
+        }
+      });
+    });
+
+    // 라이트박스
+    const lb = document.getElementById('lightbox');
+    document.getElementById('feed').addEventListener('click', e=>{ if(e.target.tagName==='IMG'){ lb.querySelector('img').src = e.target.src; lb.classList.add('active'); }});
+    lb.addEventListener('click', ()=> lb.classList.remove('active'));
+
+    // 배경 이미지 교체 함수
+    window.setBackgroundImage = (url)=>{ document.getElementById('bgGif').src = url; }
+
+    // 네이버 지도: 1회 초기화
+    let mapInited = false;
+    function initMapOnce(){
+      if(mapInited) return; mapInited = true;
+      const VENUE = { lat: 37.505, lng: 127.05 }; // TODO: 실제 좌표로 교체
+      if(window.naver && naver.maps){
+        const map = new naver.maps.Map('naverMap', { center: new naver.maps.LatLng(VENUE.lat, VENUE.lng), zoom: 16, zoomControl: true });
+        const marker = new naver.maps.Marker({ position: new naver.maps.LatLng(VENUE.lat, VENUE.lng), map, title: '더화이트베일 라포네홀' });
+        // 외부 지도 링크
+        const q = encodeURIComponent('더화이트베일 5층 라포네홀');
+        document.getElementById('openNaver').href = `https://map.naver.com/v5/search/${q}`;
+        document.getElementById('openKakao').href = `https://map.kakao.com/?q=${q}`;
+      } else {
+        document.getElementById('naverMap').innerHTML = '<div style="display:grid;place-items:center;height:100%;color:#999">지도 SDK 로드 실패 — ncpClientId를 설정하세요</div>';
+      }
+    }
+  </script>
+</body>
+</html>
