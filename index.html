@@ -79,7 +79,7 @@
     #naverMap{width:100%; height:100%}
 
     /* 하단 탭바 */
-    nav.tabbar{position:fixed; left:0; right:0; bottom:0; height:84px; padding:8px 10px calc(8px + var(--safe-bottom)); z-index:5; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; align-items:end; backdrop-filter: blur(var(--blur)); background:linear-gradient(0deg, rgba(255,255,255,.75), rgba(255,255,255,.45)); border-top:1px solid rgba(0,0,0,.06);}
+    nav.tabbar{position:fixed; left:0; right:0; bottom:0; height:84px; padding:8px 10px calc(8px + var(--safe-bottom)); z-index:5; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; align-items:end; backdrop-filter: blur(var(--blur)); background:linear-gradient(0deg, rgba(255,255,255,.75), rgba(255,255,255,.45)); border-top:1px solid rgba(0,0,0,.06);} gap:8px; align-items:end; backdrop-filter: blur(var(--blur)); background:linear-gradient(0deg, rgba(255,255,255,.75), rgba(255,255,255,.45)); border-top:1px solid rgba(0,0,0,.06);}
     .tab{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 2px; border-radius:12px; color:#5a5a60; text-decoration:none; user-select:none}
     .tab svg{width:26px; height:26px}
     .tab.active{color:#111}
@@ -135,23 +135,7 @@
     </section>
 
     <!-- 스토리 -->
-    <section class="view" data-route="story">
-      <div class="timeline">
-        <div class="tl-item">
-          <div class="t">처음 만난 날</div>
-          <div class="b">서점에서 우연히 마주친 인연이 시작이 되었어요.</div>
-        </div>
-        <div class="tl-item">
-          <div class="t">우리의 약속</div>
-          <div class="b">작은 것에 웃고, 어려움에는 손을 잡아주기로 했어요.</div>
-        </div>
-        <div class="tl-item">
-          <div class="t">그리고 지금</div>
-          <div class="b">가을 햇살 아래, 함께 걸음을 시작합니다.</div>
-        </div>
-      </div>
-    </section>
-
+    
     <!-- 갤러리 (3x3 피드) -->
     <section class="view" data-route="gallery">
       <div class="grid3" id="feed">
@@ -227,12 +211,7 @@
       <span class="label">홈</span>
       <div class="dot"></div>
     </a>
-    <a class="tab" data-link="story" href="#story" aria-label="스토리">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 8h10M7 12h6"/></svg>
-      <span class="label">스토리</span>
-      <div class="dot" hidden></div>
-    </a>
-    <a class="tab" data-link="gallery" href="#gallery" aria-label="갤러리">
+        <a class="tab" data-link="gallery" href="#gallery" aria-label="갤러리">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>
       <span class="label">갤러리</span>
       <div class="dot" hidden></div>
@@ -254,7 +233,7 @@
   <script>
     // 탭 라우터
     const tabs = document.querySelectorAll('.tabbar .tab');
-    const routeOrder = ['home','story','gallery','info','map'];
+    const routeOrder = ['home','gallery','info','map'];
     const views = document.querySelectorAll('section.view');
     const router = document.getElementById('router');
     function activate(route){
@@ -269,7 +248,8 @@
       if(route==='map') initMapOnce();
     }
     tabs.forEach(t=>t.addEventListener('click', e=>{ e.preventDefault(); activate(t.dataset.link); history.replaceState({}, '', '#'+t.dataset.link);}));
-    const initRoute = location.hash?.replace('#','') || 'home';
+    let initRoute = (location.hash?.replace('#','') || 'home');
+    if(!routeOrder.includes(initRoute)) initRoute = 'home';
     activate(initRoute);
 
     // 스와이프 내비게이션 (좌/우)
