@@ -23,10 +23,7 @@
     .bg-wrap img{width:120%;height:120%;object-fit:cover;transform:translate(-10%,-10%);filter:saturate(1.02) brightness(1.02) contrast(1.02)}
     .bg-overlay{position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.70),rgba(255,255,255,.35))}
 
-    /* 상단 헤더 제거 → 레이아웃 보정 */
-    /* header 삭제됨 */
-
-    /* 라우터 뷰: 헤더 제거로 top=0로 조정 */
+    /* 라우터 뷰 */
     main#router{position:fixed;top:0;bottom:84px;left:0;right:0;overflow:auto;padding:16px}
     section.view{display:none;animation:fade .28s ease}
     section.view.active{display:block}
@@ -36,31 +33,15 @@
     .card{background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
     .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#333;padding:6px 10px;border-radius:999px;font-size:12px}
 
-    /* 홈 히어로 + 인사말(개선) */
-    .hero-wrap{
-      min-height:calc(100dvh - 84px - 32px); /* 탭바 높이 + router padding 고려 */
-      display:flex;align-items:center;justify-content:center;
-    }
-    .hero{
-      display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
-      padding:32px 16px 28px; /* 위아래 패딩 확장 */
-    }
+    /* 홈 히어로 + 인사말 */
+    .hero-wrap{min-height:calc(100dvh - 84px - 32px);display:flex;align-items:center;justify-content:center}
+    .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:32px 16px 28px}
     .hero .names{font-size:32px;font-weight:800;color:#222}
     .hero .amp{color:var(--accent)}
     .hero .date{color:#4f4f56;font-size:15px}
-    .intro-card{
-      margin-top:18px;display:inline-block;max-width:540px;
-      background:rgba(255,255,255,.92);border-radius:20px;
-      padding:28px 22px; /* 내부 패딩 확장 */
-      border:1px solid #eee;box-shadow:0 8px 20px rgba(0,0,0,.05)
-    }
+    .intro-card{margin-top:18px;display:inline-block;max-width:540px;background:rgba(255,255,255,.92);border-radius:20px;padding:28px 22px;border:1px solid #eee;box-shadow:0 8px 20px rgba(0,0,0,.05)}
     .intro-title{font-family:'Marcellus',serif;font-size:18px;color:#8b6b4f;margin-bottom:12px}
     .intro-text{line-height:1.95;font-size:15px;color:#444;white-space:pre-line}
-
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-    .info-item{padding:14px;border-radius:16px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.06);color:#2b2b2b}
-    .info-item .k{font-size:12px;color:#777}
-    .info-item .v{font-weight:800;margin-top:6px}
 
     /* 갤러리 */
     .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
@@ -103,10 +84,8 @@
   </div>
   <div class="bg-overlay" aria-hidden="true"></div>
 
-  <!-- 헤더 제거됨 -->
-
   <main id="router">
-    <!-- 홈 -->
+    <!-- 초대장(홈) -->
     <section class="view active" data-route="home">
       <div class="hero-wrap">
         <div class="card hero">
@@ -114,7 +93,6 @@
           <div class="names">김규민 <span class="amp">&</span> 김의인</div>
           <div class="date">2026. 00. 00 (토) · 오전 11:00</div>
           <div class="date">사랑의교회 언약채플</div>
-          <!-- 인사말 카드 -->
           <div class="intro-card">
             <div class="intro-title">초대의 글</div>
             <div class="intro-text">함께 웃고 울며 서로의 삶을 채워온 두 사람이
@@ -127,18 +105,19 @@
       </div>
     </section>
 
-    <!-- 갤러리 (3x3 피드) -->
+    <!-- 갤러리 -->
     <section class="view" data-route="gallery">
       <div class="grid3" id="feed">
-        <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=600&auto=format&fit=crop" alt="사진1" />
-        <img src="https://cdn.pixabay.com/photo/2019/10/20/10/38/flower-4563208_1280.jpg" alt="사진2" />
-        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진3" />
-        <img src="https://cdn.pixabay.com/photo/2019/11/10/11/13/happy-valentines-day-4615557_1280.jpg" alt="사진4" />
-        <img src="https://images.unsplash.com/photo-1460364157752-926555421a7e?q=80&w=600&auto=format&fit=crop" alt="사진5" />
-        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진6" />
-        <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?q=80&w=600&auto=format&fit=crop" alt="사진7" />
-        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=600&auto=format&fit=crop" alt="사진8" />
-        <img src="https://cdn.pixabay.com/photo/2017/03/21/18/43/couple-2162950_1280.jpg" alt="사진9" />
+        <!-- 원하는 이미지로 src만 교체하세요 -->
+        <img src="https://images.pexels.com/photos/2959192/pexels-photo-2959192.jpeg" alt="사진1" />
+        <img src="https://images.pexels.com/photos/1408221/pexels-photo-1408221.jpeg" alt="사진2" />
+        <img src="https://images.pexels.com/photos/139829/pexels-photo-139829.jpeg" alt="사진3" />
+        <img src="https://images.pexels.com/photos/169192/pexels-photo-169192.jpeg" alt="사진4" />
+        <img src="https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg" alt="사진5" />
+        <img src="https://images.pexels.com/photos/2082103/pexels-photo-2082103.jpeg" alt="사진6" />
+        <img src="https://images.pexels.com/photos/341858/pexels-photo-341858.jpeg" alt="사진7" />
+        <img src="https://images.pexels.com/photos/2959196/pexels-photo-2959196.jpeg" alt="사진8" />
+        <img src="https://images.pexels.com/photos/265947/pexels-photo-265947.jpeg" alt="사진9" />
       </div>
     </section>
 
@@ -176,7 +155,7 @@
       </div>
     </section>
 
-    <!-- 오시는 길 (네이버 지도) -->
+    <!-- 오시는 길 -->
     <section class="view" data-route="map">
       <div class="card" style="margin-bottom:12px">
         <div style="font-weight:800;margin-bottom:6px">사랑의교회 언약채플</div>
@@ -190,16 +169,21 @@
     </section>
   </main>
 
-  <!-- 라이트박스 -->
+  <!-- 라이트박스 + 토스트 -->
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="사진 크게 보기">
     <img alt="미리보기" />
   </div>
+  <div class="toast" id="toast">복사되었습니다</div>
 
-  <!-- 탭바: 홈 / 갤러리 / 계좌·연락 / 오시는 길 -->
+  <!-- 탭바 -->
   <nav class="tabbar" aria-label="하단 탭바">
-    <a class="tab active" data-link="home" href="#home" aria-label="홈">
-      <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>
-      <span class="label">홈</span>
+    <a class="tab active" data-link="home" href="#home" aria-label="초대장">
+      <!-- 봉투형 아이콘 (안정 렌더 버전) -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" ry="2"></rect>
+        <polyline points="3,7 12,13 21,7"></polyline>
+      </svg>
+      <span class="label">초대장</span>
       <div class="dot"></div>
     </a>
     <a class="tab" data-link="gallery" href="#gallery" aria-label="갤러리">
@@ -218,8 +202,6 @@
       <div class="dot" hidden></div>
     </a>
   </nav>
-
-  <div class="toast" id="toast">복사되었습니다</div>
 
   <script>
     // 탭 라우팅
@@ -291,17 +273,12 @@
     let mapInited=false;
     function initMapOnce(){
       if(mapInited) return; mapInited=true;
-
-      // TODO: 실제 좌표로 교체 (사랑의교회 언약채플)
-      const VENUE={lat:37.487, lng:127.017}; // 임시값(서초 일대)
+      const VENUE={lat:37.487, lng:127.017}; // TODO: 실제 좌표로 교체
       if(window.naver&&naver.maps){
         const map=new naver.maps.Map('naverMap',{
           center:new naver.maps.LatLng(VENUE.lat,VENUE.lng),zoom:16,zoomControl:true
         });
-        new naver.maps.Marker({
-          position:new naver.maps.LatLng(VENUE.lat,VENUE.lng),
-          map,title:'사랑의교회 언약채플'
-        });
+        new naver.maps.Marker({position:new naver.maps.LatLng(VENUE.lat,VENUE.lng),map,title:'사랑의교회 언약채플'});
         const q=encodeURIComponent('사랑의교회 언약채플');
         document.getElementById('openNaver').href=`https://map.naver.com/v5/search/${q}`;
         document.getElementById('openKakao').href=`https://map.kakao.com/?q=${q}`;
