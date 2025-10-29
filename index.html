@@ -259,12 +259,75 @@
       })
     });
 
-    // 라이트박스
-    const lb=document.getElementById('lightbox');
-    document.getElementById('feed').addEventListener('click',e=>{
-      if(e.target.tagName==='IMG'){lb.querySelector('img').src=e.target.src;lb.classList.add('active');}
-    });
-    lb.addEventListener('click',()=>lb.classList.remove('active'));
+    // 라이트박스 (스와이프 내비게이션 포함)
+const lb = document.getElementById('lightbox');
+const lbImg = lb?.querySelector('img');
+const feed = document.getElementById('feed');
+
+let thumbs = [];
+let currentIndex = 0;
+
+function setImageByIndex(i){
+  if(!thumbs.length) return;
+  currentIndex = (i + thumbs.length) % thumbs.length; // 양끝 순환
+  const el = thumbs[currentIndex];
+  lbImg.src = el.currentSrc || el.src;
+}
+
+function openWithTarget(imgEl){
+  const idx = Number(imgEl.dataset.idx ?? thumbs.indexOf(imgEl));
+  if(idx >= 0){
+    setImageByIndex(idx);
+    lb.classList.add('active');
+  }
+}
+
+if (feed && lb && lbImg) {
+  // 갤러리 썸네일 수집 + 인덱싱
+  thumbs = Array.from(feed.querySelectorAll('img'));
+  thumbs.forEach((img, i) => img.dataset.idx = i);
+
+  // 썸네일 클릭 → 라이트박스 오픈
+  feed.addEventListener('click', (e) => {
+    const img = e.target.closest('img');
+    if (!img) return;
+    openWithTarget(img);
+  });
+
+  // 오버레이 클릭 시 닫기 (이미지 자체 클릭은 유지)
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) lb.classList.remove('active');
+  });
+
+  // 키보드 내비(데스크톱): ← → / ESC
+  document.addEventListener('keydown', (e) => {
+    if (!lb.classList.contains('active')) return;
+    if (e.key === 'Escape') lb.classList.remove('active');
+    if (e.key === 'ArrowRight') setImageByIndex(currentIndex + 1);
+    if (e.key === 'ArrowLeft') setImageByIndex(currentIndex - 1);
+  });
+
+  // 터치 스와이프 내비게이션
+  let sx = 0, sy = 0;
+  lb.addEventListener('touchstart', (e) => {
+    const t = e.changedTouches[0];
+    sx = t.clientX; sy = t.clientY;
+  }, { passive: true });
+
+  lb.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx;
+    const dy = t.clientY - sy;
+    const H = 50; // 스와이프 임계값(px)
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > H) {
+      if (dx < 0) setImageByIndex(currentIndex + 1);  // 왼쪽으로 스와이프 → 다음
+      else setImageByIndex(currentIndex - 1);         // 오른쪽으로 스와이프 → 이전
+    }
+  }, { passive: true });
+
+} else {
+  console.warn('Lightbox 초기화 실패: #feed 또는 #lightbox를 찾지 못했습니다.');
+}
 
     // 배경 이미지 교체 함수
     window.setBackgroundImage=(url)=>{document.getElementById('bgGif').src=url;}
