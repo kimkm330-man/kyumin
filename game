@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LOVE QUEST — 화이트 픽셀 청첩장</title>
+  <meta name="theme-color" content="#ffffff" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #2d2d2d;
+      --primary: #ff8fa3;
+      --accent: #66c7c5;
+      --surface: #fefefe;
+      --grid: #f0f0f0;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Press Start 2P', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    body:before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 12px 12px;
+      opacity: 0.2;
+    }
+    .app { position: relative; z-index: 1; min-height: 100dvh; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; }
+    .hud { position: sticky; top: 0; z-index: 20; }
+    .hud-inner {
+      display: flex; align-items: center; gap: 12px; padding: 14px 12px;
+      background: var(--surface); border: 3px solid var(--accent);
+      box-shadow: 0 6px 12px var(--shadow); border-radius: 8px; margin: 10px;
+    }
+    .chip { padding: 6px 10px; background: var(--accent); color: white; border-radius: 6px; }
+    .hearts { display: flex; gap: 6px; margin-left: auto; }
+    .pixel-heart { width: 18px; height: 18px; background: var(--primary); clip-path: polygon(20% 0,40% 0,50% 10%,60% 0,80% 0,100% 20%,100% 40%,50% 100%,0 40%,0 20%); }
+    .stage-wrap { position: relative; flex: 1; overflow: hidden; }
+    .stage { position: absolute; inset: 0; padding: 22px 12px 110px; overflow: auto; display: flex; flex-direction: column; gap: 16px; opacity: 0; transform: translateX(20px); pointer-events: none; transition: opacity .25s ease, transform .25s ease; }
+    .stage.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+    .card { background: var(--surface); border: 2px solid var(--grid); border-radius: 10px; box-shadow: 0 4px 12px var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .title { font-size: 12px; color: var(--accent); text-shadow: 0 1px 0 white; }
+    .caption { font-size: 10px; opacity: 0.8; }
+    .duo { display: flex; gap: 16px; align-items: flex-end; justify-content: center; padding: 8px 0; }
+    svg[role="img"] { image-rendering: pixelated; width: 120px; height: auto; border-radius: 6px; background: #fff; box-shadow: 0 4px 10px var(--shadow); }
+    .cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .btn { border: none; background: var(--primary); color: white; padding: 10px 14px; font-size: 12px; border-radius: 8px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2); cursor: pointer; transition: transform 0.1s ease; }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: translateY(2px); }
+    .btn.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .thumb { position: relative; overflow: hidden; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px var(--shadow); }
+    .thumb img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 8px; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 40; }
+    .modal.open { display: flex; }
+    .modal-inner { background: white; width: min(92vw, 520px); border-radius: 12px; box-shadow: 0 10px 20px var(--shadow); overflow: hidden; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--grid); }
+    .modal-body { max-height: 70vh; overflow: auto; }
+    .modal-body img { width: 100%; display: block; }
+    .nav { position: sticky; bottom: 0; z-index: 30; padding: 10px 12px calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--grid); box-shadow: 0 -2px 6px var(--shadow); }
+    .nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .nav button { background: #fff; color: var(--ink); padding: 10px 6px; border: 1px solid var(--grid); border-radius: 8px; font-size: 10px; box-shadow: 0 2px 5px var(--shadow); }
+    .nav .on { background: var(--accent); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hud">
+      <div class="hud-inner">
+        <span class="chip">LOVE·QUEST</span>
+        <strong style="font-size:10px">WEDDING STAGE</strong>
+        <div class="hearts"><span class="pixel-heart"></span><span class="pixel-heart"></span><span class="pixel-heart"></span></div>
+      </div>
+    </header>
+    <main class="stage-wrap">
+      <section class="stage active" data-stage="0">
+        <div class="card kv" style="text-align:center">
+          <h1 style="font-size:16px">우리의 결혼식에 초대합니다</h1>
+          <p class="caption">2026.00.00(토) 11:00 · 사랑의교회 언약채플</p>
+          <div class="duo">
+            <svg role="img" viewBox="0 0 32 32">
+              <rect x="12" y="16" width="8" height="10" fill="#a0e0dd"/>
+              <rect x="10" y="6" width="12" height="10" fill="#fdd4c3"/>
+              <rect x="13" y="11" width="2" height="2" fill="#111"/>
+              <rect x="17" y="11" width="2" height="2" fill="#111"/>
+              <rect x="14" y="14" width="4" height="1" fill="#e11d48"/>
+              <rect x="14" y="20" width="4" height="2" fill="#82cbc8"/>
+            </svg>
+            <svg role="img" viewBox="0 0 32 32">
+              <rect x="10" y="18" width="12" height="8" fill="#ffb3c6"/>
+              <rect x="10" y="6" width="12" height="10" fill="#fdd4c3"/>
+              <rect x="13" y="11" width="2" height="2" fill="#111"/>
+              <rect x="17" y="11" width="2" height="2" fill="#111"/>
+              <rect x="14" y="14" width="4" height="1" fill="#e11d48"/>
+              <rect x="8" y="6" width="3" height="10" fill="#ffe4f1"/>
+              <rect x="21" y="6" width="3" height="10" fill="#ffe4f1"/>
+            </svg>
+          </div>
+          <div class="cta">
+            <button class="btn" data-go="1">START ▶</button>
+            <button class="btn ghost" data-go="2">STAGES</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="title">💖 프롤로그</div>
+          <p style="font-size:12px">두 사람은 사랑의 교회 <strong>언약채플</strong>로 향합니다. 당신의 축복이 퀘스트를 완성합니다!</p>
+          <ul class="caption" style="margin:0;padding-left:18px">
+            <li>신랑: 규민 — 플래너 기사</li>
+            <li>신부: (이름) — 힐링 마법사</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="stage" data-stage="1">
+        <div class="card">
+          <div class="title">📜 초대의 글</div>
+          <p style="font-size:12px">함께한 시간들이 쌓여 드디어 결혼이라는 스테이지에 도달했습니다. 소중한 걸음으로 축복해 주세요.</p>
+        </div>
+        <div class="card">
+          <div class="title">🗓 일정</div>
+          <p style="font-size:12px"><strong>2026.00.00(토) 11:00</strong></p>
+          <p class="caption">예식 10분 전까지 착석 부탁드립니다.</p>
+        </div>
+        <div class="card">
+          <div class="title">📍 장소</div>
+          <p style="font-size:12px"><strong>사랑의교회 언약채플</strong></p>
+          <p class="caption">서울 서초구 반포대로 121 (예시)</p>
+          <div id="map" style="height:240px;border-radius:10px;background:#f2f2f2;"></div>
+          <div class="cta">
+            <a class="btn ghost" href="https://map.naver.com/" target="_blank">네이버 지도</a>
+            <a class="btn ghost" href="https://map.kakao.com/" target="_blank">카카오 지도</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="stage" data-stage="2">
+        <div class="card">
+          <div class="title">🗺 오시는 길</div>
+          <ul style="font-size:11px;line-height:1.8">
+            <li>지하철: 3호선 양재역 10번 출구 도보 7분</li>
+            <li>버스: 140, 405, 440 하차 후 도보 3분</li>
+            <li>주차: 지하 주차장 2시간 무료</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="title">🎁 드레스 코드</div>
+          <p style="font-size:12px">밝고 캐주얼한 파스텔톤 환영 💐</p>
+        </div>
+      </section>
+
+      <section class="stage" data-stage="3">
+        <div class="card">
+          <div class="title">📸 갤러리</div>
+          <div class="grid" id="gallery">
+            <div class="thumb"><img src="https://images.unsplash.com/photo-1516826957135-700dedea698c?q=80&w=800&auto=format&fit=crop" data-full="https://images.unsplash.com/photo-1516826957135-700dedea698c?q=80&w=1600&auto=format&fit=crop"/></div>
+            <div class="thumb"><img src="https://images.unsplash.com/photo-1512288094930-363f2e5b3b9c?q=80&w=800&auto=format&fit=crop" data-full="https://images.unsplash.com/photo-1512288094930-363f2e5b3b9c?q=80&w=1600&auto=format&fit=crop"/></div>
+            <div class="thumb"><img src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop" data-full="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop"/></div>
+          </div>
+          <p class="caption">이미지를 탭하면 크게 볼 수 있어요.</p>
+        </div>
+      </section>
+
+      <section class="stage" data-stage="4">
+        <div class="card">
+          <div class="title">🎉 THANK YOU</div>
+          <p style="font-size:12px">축복해 주셔서 감사합니다. 당신의 응원이 우리의 가장 큰 버프가 됩니다!</p>
+          <div class="cta">
+            <button class="btn" onclick="shareInvite()">초대장 공유</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="nav">
+      <div class="nav-inner">
+        <button class="on" data-go="0">START</button>
+        <button data-go="1">초대</button>
+        <button data-go="2">미션</button>
+        <button data-go="3">갤러리</button>
+        <button data-go="4">엔딩</button>
+      </div>
+    </nav>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-inner">
+      <div class="modal-head">
+        <strong>미리보기</strong>
+        <button id="closeModal" style="border:none;background:none;font-size:18px">✖</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // -------- Stage 전환 --------
+    const stages = Array.from(document.querySelectorAll('.stage'));
+    const navButtons = Array.from(document.querySelectorAll('.nav [data-go]'));
+
+    function goToStage(index){
+      stages.forEach(s=>s.classList.remove('active'));
+      const target = stages.find(s=>Number(s.dataset.stage)===Number(index));
+      if(target) target.classList.add('active');
+      navButtons.forEach(btn=>{
+        const on = Number(btn.dataset.go)===Number(index);
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-selected', on);
+      });
+      const onBtn = navButtons.find(b=>b.classList.contains('on'));
+      onBtn?.focus({preventScroll:true});
+    }
+
+    document.addEventListener('click',e=>{
+      const go=e.target.closest('[data-go]');
+      if(go){
+        e.preventDefault();
+        goToStage(go.getAttribute('data-go'));
+      }
+    });
+
+    // -------- 지도 초기화 (키 없어도 우아한 폴백) --------
+    function initMap(){
+      const el = document.getElementById('map');
+      if(!el) return;
+      try{
+        if(window.naver && naver.maps){
+          const pos = new naver.maps.LatLng(37.484, 127.034); // 예시 좌표
+          const map = new naver.maps.Map(el, { center: pos, zoom: 16 });
+          new naver.maps.Marker({ position: pos, map });
+        } else {
+          el.innerHTML = '<div style="padding:16px; text-align:center; color:#888">지도를 불러오지 못했습니다. 아래 길찾기 버튼을 이용해주세요.</div>';
+        }
+      }catch(err){
+        el.innerHTML = '<div style="padding:16px; text-align:center; color:#888">지도를 불러오지 못했습니다. 아래 길찾기 버튼을 이용해주세요.</div>';
+      }
+    }
+    window.addEventListener('load', initMap);
+
+    // -------- 갤러리 모달 --------
+    const gallery=document.getElementById('gallery');
+    const modal=document.getElementById('modal');
+    const modalBody=document.getElementById('modalBody');
+    const closeModalBtn=document.getElementById('closeModal');
+
+    function openModal(node){
+      modalBody.innerHTML='';
+      modalBody.appendChild(node);
+      modal.classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeModal(){
+      modal.classList.remove('open');
+      document.body.style.overflow='';
+      modalBody.innerHTML='';
+    }
+
+    closeModalBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+
+    if(gallery){
+      gallery.addEventListener('click',e=>{
+        const img=e.target.closest('img');
+        if(!img) return;
+        const full=img.getAttribute('data-full')||img.src;
+        const view = new Image();
+        view.src = full;
+        view.alt = img.alt || '사진';
+        openModal(view);
+      });
+    }
+
+    // -------- 공유 기능 --------
+    function shareInvite(){
+      const shareData = {
+        title:'LOVE QUEST — 청첩장',
+        text:'우리의 결혼식에 초대합니다! 2026.00.00(토) 11:00 · 사랑의교회 언약채플',
+        url: location.href
+      };
+      if(navigator.share){ navigator.share(shareData).catch(()=>{}); }
+      else { navigator.clipboard?.writeText(shareData.url); alert('링크가 복사되었습니다.'); }
+    }
+    window.shareInvite = shareInvite;
+  </script>
+</body>
+</html>
